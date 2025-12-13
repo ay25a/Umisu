@@ -1,0 +1,11 @@
+{ 
+	BasedOnStyle: LLVM,
+	UseTab: Never, 
+	IndentWidth: 2,
+	TabWidth: 4,
+ 	AllowShortIfStatementsOnASingleLine: false,
+ 	IndentCaseLabels: false,
+	ColumnLimit: 0,
+	Cpp11BracedListStyle: true,
+	SortIncludes: false,
+}
