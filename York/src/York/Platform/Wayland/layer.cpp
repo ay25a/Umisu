@@ -1,4 +1,5 @@
 #include "York/Platform/Wayland/layer.hpp"
+#include "York/Core/result.hpp"
 
 namespace york {
 
@@ -6,7 +7,7 @@ Result<Layer<Wayland> *> Layer<Wayland>::Create(const char *title, uint32_t widt
   auto window = new Layer<Wayland>();
   if (auto err = window->Init(title, width, height); err) {
     delete window;
-    return YORK_FAILURE("Failed to create Wayland window: {}", err.error());
+    return failure<Layer<Wayland> *>("Failed to create Wayland window: {}", err.error());
   }
 
   window->m_Info = {
@@ -15,7 +16,7 @@ Result<Layer<Wayland> *> Layer<Wayland>::Create(const char *title, uint32_t widt
       .height = height,
   };
 
-  return YORK_SUCCESS(window);
+  return ok(window);
 }
 
 Error Layer<Wayland>::Init(const char *title, uint32_t width, uint32_t height) {
@@ -56,7 +57,7 @@ Error Layer<Wayland>::Init(const char *title, uint32_t width, uint32_t height) {
   while (!ready);
   // clang-format on
 
-  return YORK_OK();
+  return ok();
 }
 
 Layer<Wayland>::~Layer() {
@@ -72,7 +73,7 @@ Error Layer<Wayland>::Frame() const {
   wl_display_flush(m_Handle);
   wl_surface_commit(m_State.surface);
 
-  return YORK_OK();
+  return ok();
 }
 
 void Layer<Wayland>::RegisteryAdd(void *data, struct wl_registry *registry, uint32_t name, const char *interface, uint32_t version) {

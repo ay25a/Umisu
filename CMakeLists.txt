@@ -6,3 +6,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 23)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/York)
+add_subdirectory(${CMAKE_SOURCE_DIR}/Umisu)

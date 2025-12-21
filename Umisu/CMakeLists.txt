@@ -1,31 +1,19 @@
-project(MikuAgent)
+project(Umisu)
 
-set(MAGENT_SOURCE_DIR ${MIKU_SOURCE_DIR}/MikuAgent)
+set(UMISU_BASE_DIR ${CMAKE_SOURCE_DIR}/Umisu)
+set(UMISU_SOURCE_DIR ${UMISU_BASE_DIR}/src/Umisu)
 
-set(MAGENT_SOURCE_FILES 
-  ${MAGENT_SOURCE_DIR}/src/main.cpp
-  ${MAGENT_SOURCE_DIR}/src/window.cpp
-  ${MAGENT_SOURCE_DIR}/src/MikuAgent.cpp
-  ${MAGENT_SOURCE_DIR}/src/vulkan-context.cpp
-  ${MAGENT_SOURCE_DIR}/src/renderer.cpp
-
-  ${MAGENT_SOURCE_DIR}/src/window.hpp
-  ${MAGENT_SOURCE_DIR}/src/MikuAgent.hpp
-  ${MAGENT_SOURCE_DIR}/src/vulkan-context.hpp
-  ${MAGENT_SOURCE_DIR}/src/renderer.hpp
-
-  ${CMAKE_SOURCE_DIR}/vendor/wayland/xdg-shell-client-protocol.c
-  ${CMAKE_SOURCE_DIR}/vendor/wayland/zwlr-layer-shell-unstable-v1-client-protocol.c
-
+set(UMISU_SOURCE_FILES
+  ${UMISU_BASE_DIR}/src/main.cpp
 )
-add_executable(miku ${MAGENT_SOURCE_FILES})
 
-find_package(Vulkan REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(WAYLAND REQUIRED wayland-client wayland-cursor)
-link_directories(${WAYLAND_LIBRARY_DIRS})
+#set(UMISU_HEADER_FILES)
 
-target_link_libraries(miku 
-  PRIVATE Vulkan::Vulkan
-  PRIVATE ${WAYLAND_LIBRARIES}
+add_executable(Umisu ${UMISU_SOURCE_FILES})
+target_include_directories(Umisu 
+  PRIVATE ${UMISU_SOURCE_DIR}/src
+)
+
+target_link_libraries(Umisu 
+  PRIVATE York
 )
