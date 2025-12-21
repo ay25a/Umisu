@@ -1,0 +1,3 @@
+[submodule "York/vendor/spdlog"]
+	path = York/vendor/spdlog
+	url = https://github.com/gabime/spdlog.git
