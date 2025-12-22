@@ -1,30 +1,32 @@
 #include "York/Platform/Wayland/layer.hpp"
+#include "York/Core/gui.hpp"
 #include "York/Core/result.hpp"
+#include <memory>
 
 namespace york {
 
-Result<Layer<Wayland> *> Layer<Wayland>::Create(const char *title, uint32_t width, uint32_t height) {
-  auto window = new Layer<Wayland>();
-  if (auto err = window->Init(title, width, height); err) {
-    delete window;
-    return failure<Layer<Wayland> *>("Failed to create Wayland window: {}", err.error());
-  }
+Result<std::unique_ptr<Layer<Wayland>>> Layer<Wayland>::Create(const char *title, uint32_t width, uint32_t height) {
+  auto layer = std::unique_ptr<Layer<Wayland>>(new Layer<Wayland>);
 
-  window->m_Info = {
+  if (auto result = layer->Init(title, width, height); has_failed(result))
+    return failure<std::unique_ptr<Layer<Wayland>>>(result, ErrorCategory::Creation);
+
+  layer->m_Info = {
       .title = title,
       .width = width,
       .height = height,
   };
 
-  return ok(window);
+  return ok(layer);
 }
 
-Error Layer<Wayland>::Init(const char *title, uint32_t width, uint32_t height) {
-  m_Handle = wl_display_connect(nullptr);
-  YORK_EXPECT(m_Handle, "Cannot create wayland display!");
+Result<> Layer<Wayland>::Init(const char *title, uint32_t width, uint32_t height) {
+  if (m_Handle = wl_display_connect(nullptr); !m_Handle)
+    return failure("wl_display_connect");
 
-  m_State.registery = wl_display_get_registry(m_Handle);
-  YORK_EXPECT(m_State.registery, "Cannot get wayland registry!");
+  if (m_State.registery = wl_display_get_registry(m_Handle); !m_State.registery)
+    return failure("wl_display_get_registry");
+
   wl_registry_add_listener(m_State.registery, &REGESTRY_LISTENER, static_cast<void *>(&m_State));
 
   // clang-format off
@@ -33,13 +35,14 @@ Error Layer<Wayland>::Init(const char *title, uint32_t width, uint32_t height) {
   // clang-format on
 
   xdg_wm_base_add_listener(m_State.xdg, &XDG_LISTENER, nullptr);
-  m_State.surface = wl_compositor_create_surface(m_State.compositor);
-  YORK_EXPECT(m_State.surface, "Failed to create window surface!");
+  if (m_State.surface = wl_compositor_create_surface(m_State.compositor); !m_State.surface)
+    return failure("wl_compositor_create_surface");
 
   bool ready = false;
   m_State.zwlrSurface = zwlr_layer_shell_v1_get_layer_surface(
       m_State.zwlr, m_State.surface, m_State.output, ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, title);
-  YORK_EXPECT(m_State.zwlrSurface, "Failed to create ZWLR layer surface!");
+  if (!m_State.zwlrSurface)
+    return failure("zwlr_layer_shell_v1_get_layer_surface");
 
   zwlr_layer_surface_v1_set_size(m_State.zwlrSurface, width, height);
   zwlr_layer_surface_v1_set_anchor(m_State.zwlrSurface, ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT | ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM);
@@ -68,7 +71,7 @@ Layer<Wayland>::~Layer() {
   }
 }
 
-Error Layer<Wayland>::Frame() const {
+Result<> Layer<Wayland>::Frame() const {
   wl_display_dispatch(m_Handle);
   wl_display_flush(m_Handle);
   wl_surface_commit(m_State.surface);

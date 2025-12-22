@@ -123,10 +123,3 @@ static std::string ToString(VkResult result) {
 }
 
 } // namespace york::vulkan
-
-// clang-format off
-#define VK_CHECK(expr) \
-  if (auto result = expr; result != VK_SUCCESS) \
-    return std::unexpected(std::format("{}", york::vulkan::ToString(result)));
-
-// clang-format off

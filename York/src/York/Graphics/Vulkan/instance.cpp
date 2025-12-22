@@ -1,8 +1,10 @@
 #include "York/Graphics/Vulkan/instance.hpp"
+#include "York/Core/result.hpp"
 #include "York/Helpers/strings.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+#include <vulkan/vulkan_core.h>
 
 namespace york::vulkan {
 
@@ -17,9 +19,8 @@ Result<std::unique_ptr<Instance>> Instance::Create(const InstanceCreateInfo &cre
   if (createInfo.EnableDebugMessenger) extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
   // clang-format on
 
-  if (auto error = instance->ValidateCreateInfo(createInfo); error) {
-    return failure<std::unique_ptr<Instance>>("Failed to create Instance");
-  }
+  if (auto result = instance->ValidateCreateInfo(createInfo); has_failed(result))
+    return failure<std::unique_ptr<Instance>>(result, ErrorCategory::Creation);
 
   const VkApplicationInfo appCI{
       .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -42,13 +43,14 @@ Result<std::unique_ptr<Instance>> Instance::Create(const InstanceCreateInfo &cre
       .ppEnabledExtensionNames = extensions.data(),
   };
 
-  VK_CHECK(vkCreateInstance(&instanceCI, nullptr, &instance->m_VkInstance))
-  instance->m_APIVersion = createInfo.ApiVersion;
+  if (auto code = vkCreateInstance(&instanceCI, nullptr, &instance->m_VkInstance); code != VK_SUCCESS)
+    return failure<std::unique_ptr<Instance>>(ToString(code), ErrorCategory::Vulkan);
 
+  instance->m_APIVersion = createInfo.ApiVersion;
   return ok(instance);
 }
 
-Error Instance::ValidateCreateInfo(const InstanceCreateInfo &createInfo) {
+Result<> Instance::ValidateCreateInfo(const InstanceCreateInfo &createInfo) {
   auto layers = Instance::GetInvalidLayers(createInfo.Layers);
   auto extensions = Instance::GetInvalidExtensions(createInfo.Extensions);
 
@@ -60,7 +62,7 @@ Error Instance::ValidateCreateInfo(const InstanceCreateInfo &createInfo) {
     error += std::format("Requested Instance Extensions are not available: {}\n", york::strings::join(layers));
 
   if (!error.empty())
-    return failure("{}", error);
+    return failure(error);
 
   return ok();
 }
@@ -109,7 +111,7 @@ std::vector<std::string> Instance::GetInvalidExtensions(const std::vector<const 
   return invalid;
 }
 
-Error Instance::EnableDebugMessenger(const DebugMessengerCreateInfo &ci) {
+Result<> Instance::EnableDebugMessenger(const DebugMessengerCreateInfo &ci) {
   // clang-format off
   uint32_t severities = 0;
   if(ci.Severities & DebugSeverity::Info) severities |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
@@ -137,7 +139,8 @@ Error Instance::EnableDebugMessenger(const DebugMessengerCreateInfo &ci) {
       reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
           vkGetInstanceProcAddr(m_VkInstance, "vkCreateDebugUtilsMessengerEXT"));
 
-  VK_CHECK(vkCreateDebugUtilsMessengerEXT(m_VkInstance, &debugCreateInfo, nullptr, &m_DebugMessenger));
+  if (auto code = vkCreateDebugUtilsMessengerEXT(m_VkInstance, &debugCreateInfo, nullptr, &m_DebugMessenger); code != VK_SUCCESS)
+    return failure(ToString(code));
   return ok();
 }
 

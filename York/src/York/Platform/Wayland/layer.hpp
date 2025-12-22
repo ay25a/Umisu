@@ -3,6 +3,7 @@
 #include "York/Core/result.hpp"
 #include "York/Core/gui.hpp"
 #include <wayland-client-core.h>
+#include <memory>
 
 extern "C" {
 #include <wayland-client.h>
@@ -22,15 +23,15 @@ struct PlatformTraits<Wayland> {
 template <>
 class Layer<Wayland> : public WindowBase<Wayland> {
 public:
-  static Result<Layer<Wayland> *> Create(const char *title, uint32_t width, uint32_t height);
+  static Result<std::unique_ptr<Layer<Wayland>>> Create(const char *title, uint32_t width, uint32_t height);
 
 private:
   Layer<Wayland>() = default;
-  Error Init(const char *title, uint32_t width, uint32_t height) override;
+  Result<> Init(const char *title, uint32_t width, uint32_t height) override;
 
 public:
   ~Layer<Wayland>() override;
-  Error Frame() const override;
+  Result<> Frame() const override;
 
 public:
   struct WaylandState {

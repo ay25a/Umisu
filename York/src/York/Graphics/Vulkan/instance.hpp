@@ -29,18 +29,18 @@ public:
   static Result<std::unique_ptr<Instance>> Create(const InstanceCreateInfo &createInfo);
 
 public:
-  static Error ValidateCreateInfo(const InstanceCreateInfo &createInfo);
+  static Result<> ValidateCreateInfo(const InstanceCreateInfo &createInfo);
   static std::vector<std::string> GetInvalidLayers(const std::vector<const char *> &requested);
   static std::vector<std::string> GetInvalidExtensions(const std::vector<const char *> &requested);
 
-  Error EnableDebugMessenger(const DebugMessengerCreateInfo &debugCreateInfo);
+  Result<> EnableDebugMessenger(const DebugMessengerCreateInfo &debugCreateInfo);
   std::vector<PhysicalDevice> EnumeratePhysicalDevices() const;
 
 private:
   Instance() = default;
 
 public:
-  ~Instance();
+  ~Instance() {};
   Instance(const Instance &) = delete;
   Instance &operator=(const Instance &) = delete;
 
