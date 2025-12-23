@@ -1,56 +1,34 @@
 #pragma once
 
 #include <expected>
-#include <string>
 #include <format>
-#include <typeinfo>
+#include <source_location>
+#include "York/Core/error.hpp"
 
 namespace york {
-enum class ErrorCategory {
-  None = 0,
-  Creation,
-  Vulkan,
+
+template <typename ResultType, typename ErrorType>
+using Result = std::expected<ResultType, Error<ErrorType>>;
+
+using Status = std::expected<void, std::string>;
+
+template <typename... Args>
+inline Status failure(std::format_string<Args...> fmt, Args &&...args) {
+  return std::unexpected(std::vformat(fmt.get(), std::make_format_args(args...)));
 };
 
-struct Error {
-  ErrorCategory Category;
-  const std::type_info &TypeInfo;
-  std::string Reason;
-};
-
-template <typename ResultType = void>
-using Result = std::expected<ResultType, Error>;
-
-template <typename ResultType = void>
-inline constexpr Result<ResultType> failure(const Error &error) { return std::unexpected(error); }
-
-inline constexpr Result<void> failure(std::string_view reason) { return std::unexpected(Error{ErrorCategory::None, typeid(void), reason.data()}); }
-
-template <typename ResultType>
-inline constexpr Result<ResultType> failure(const Result<> &inner, ErrorCategory category) {
-  return std::unexpected(Error{category, typeid(ResultType), inner.error().Reason});
+template <typename ResultType, typename ErrorType>
+inline Result<ResultType, ErrorType> failure(const Status &status, ErrorCode code, const std::source_location &location = std::source_location::current()) {
+  return std::unexpected(Error<ErrorType>::Create(code, status.error(), location));
 }
 
-template <typename ResultType>
-inline constexpr Result<ResultType> failure(std::string_view reason, ErrorCategory category) {
-  return std::unexpected(Error{category, typeid(ResultType), reason.data()});
+template <typename ResultType, typename ErrorType>
+inline Result<ResultType, ErrorType> failure(const std::string &msg, ErrorCode code, const std::source_location &location = std::source_location::current()) {
+  return std::unexpected(Error<ErrorType>::Create(code, msg, location));
 }
-
-template <typename ResultType>
-inline Result<ResultType> ok(ResultType &res) {
-  return std::move(res);
-}
-
-inline Result<> ok() {
-  return {};
-}
-
-template <typename ResultType = void>
-inline bool has_failed(const Result<ResultType> &res) noexcept { return !res.has_value(); }
-} // namespace york
-
-#define YORK_EXPECT(value, error) \
-  if (!(value))                   \
-    return std::unexpected(error);
 
 // clang-format off
+#define STATUS_SUCCESS {}
+// clang-format on
+
+} // namespace york

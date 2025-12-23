@@ -26,14 +26,14 @@ struct InstanceCreateInfo {
 
 class Instance {
 public:
-  static Result<std::unique_ptr<Instance>> Create(const InstanceCreateInfo &createInfo);
+  static Result<std::unique_ptr<Instance>, Instance> Create(const InstanceCreateInfo &createInfo);
 
 public:
-  static Result<> ValidateCreateInfo(const InstanceCreateInfo &createInfo);
+  static Status ValidateCreateInfo(const InstanceCreateInfo &createInfo);
   static std::vector<std::string> GetInvalidLayers(const std::vector<const char *> &requested);
   static std::vector<std::string> GetInvalidExtensions(const std::vector<const char *> &requested);
 
-  Result<> EnableDebugMessenger(const DebugMessengerCreateInfo &debugCreateInfo);
+  Result<void, VkDebugUtilsMessengerEXT> EnableDebugMessenger(const DebugMessengerCreateInfo &debugCreateInfo);
   std::vector<PhysicalDevice> EnumeratePhysicalDevices() const;
 
 private:

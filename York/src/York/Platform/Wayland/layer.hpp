@@ -23,15 +23,16 @@ struct PlatformTraits<Wayland> {
 template <>
 class Layer<Wayland> : public WindowBase<Wayland> {
 public:
-  static Result<std::unique_ptr<Layer<Wayland>>> Create(const char *title, uint32_t width, uint32_t height);
+  static Result<std::unique_ptr<Layer<Wayland>>, Layer<Wayland>>
+  Create(const char *title, uint32_t width, uint32_t height);
 
 private:
   Layer<Wayland>() = default;
-  Result<> Init(const char *title, uint32_t width, uint32_t height) override;
+  Status Init(const char *title, uint32_t width, uint32_t height) override;
 
 public:
   ~Layer<Wayland>() override;
-  Result<> Frame() const override;
+  Status Frame() const override;
 
 public:
   struct WaylandState {

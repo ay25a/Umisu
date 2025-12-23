@@ -1,4 +1,5 @@
 #include "York/Graphics/Vulkan/instance.hpp"
+#include "York/Core/error.hpp"
 #include "York/Core/result.hpp"
 #include "York/Helpers/strings.hpp"
 #include <cstddef>
@@ -8,7 +9,7 @@
 
 namespace york::vulkan {
 
-Result<std::unique_ptr<Instance>> Instance::Create(const InstanceCreateInfo &createInfo) {
+Result<std::unique_ptr<Instance>, Instance> Instance::Create(const InstanceCreateInfo &createInfo) {
   auto instance = std::unique_ptr<Instance>(new Instance());
 
   // clang-format off
@@ -19,8 +20,8 @@ Result<std::unique_ptr<Instance>> Instance::Create(const InstanceCreateInfo &cre
   if (createInfo.EnableDebugMessenger) extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
   // clang-format on
 
-  if (auto result = instance->ValidateCreateInfo(createInfo); has_failed(result))
-    return failure<std::unique_ptr<Instance>>(result, ErrorCategory::Creation);
+  if (auto status = instance->ValidateCreateInfo(createInfo); !status.has_value())
+    return failure<std::unique_ptr<Instance>, Instance>(status, ErrorCode::VKValidation);
 
   const VkApplicationInfo appCI{
       .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -44,13 +45,13 @@ Result<std::unique_ptr<Instance>> Instance::Create(const InstanceCreateInfo &cre
   };
 
   if (auto code = vkCreateInstance(&instanceCI, nullptr, &instance->m_VkInstance); code != VK_SUCCESS)
-    return failure<std::unique_ptr<Instance>>(ToString(code), ErrorCategory::Vulkan);
+    return failure<std::unique_ptr<Instance>, Instance>(ToString(code), ErrorCode::VKCreation);
 
   instance->m_APIVersion = createInfo.ApiVersion;
-  return ok(instance);
+  return instance;
 }
 
-Result<> Instance::ValidateCreateInfo(const InstanceCreateInfo &createInfo) {
+Status Instance::ValidateCreateInfo(const InstanceCreateInfo &createInfo) {
   auto layers = Instance::GetInvalidLayers(createInfo.Layers);
   auto extensions = Instance::GetInvalidExtensions(createInfo.Extensions);
 
@@ -62,9 +63,9 @@ Result<> Instance::ValidateCreateInfo(const InstanceCreateInfo &createInfo) {
     error += std::format("Requested Instance Extensions are not available: {}\n", york::strings::join(layers));
 
   if (!error.empty())
-    return failure(error);
+    return failure("Validation Error\n: {}", error);
 
-  return ok();
+  return STATUS_SUCCESS;
 }
 
 std::vector<std::string> Instance::GetInvalidLayers(const std::vector<const char *> &requested) {
@@ -111,7 +112,7 @@ std::vector<std::string> Instance::GetInvalidExtensions(const std::vector<const 
   return invalid;
 }
 
-Result<> Instance::EnableDebugMessenger(const DebugMessengerCreateInfo &ci) {
+Result<void, VkDebugUtilsMessengerEXT> Instance::EnableDebugMessenger(const DebugMessengerCreateInfo &ci) {
   // clang-format off
   uint32_t severities = 0;
   if(ci.Severities & DebugSeverity::Info) severities |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
@@ -140,8 +141,9 @@ Result<> Instance::EnableDebugMessenger(const DebugMessengerCreateInfo &ci) {
           vkGetInstanceProcAddr(m_VkInstance, "vkCreateDebugUtilsMessengerEXT"));
 
   if (auto code = vkCreateDebugUtilsMessengerEXT(m_VkInstance, &debugCreateInfo, nullptr, &m_DebugMessenger); code != VK_SUCCESS)
-    return failure(ToString(code));
-  return ok();
+    return failure<void, VkDebugUtilsMessengerEXT>(ToString(code), ErrorCode::VKCreation);
+
+  return {};
 }
 
 std::vector<PhysicalDevice> Instance::EnumeratePhysicalDevices() const {

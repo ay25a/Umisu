@@ -20,15 +20,15 @@ public:
   };
 
 protected:
-  virtual Result<> Init(const char *title, uint32_t width, uint32_t height) = 0;
+  virtual Status Init(const char *title, uint32_t width, uint32_t height) = 0;
 
 public:
   WindowBase<Platform>() = default;
-  virtual ~WindowBase<Platform>(){};
+  virtual ~WindowBase<Platform>() = default;
   WindowBase<Platform>(const WindowBase<Platform> &) = delete;
   WindowBase<Platform> &operator=(const WindowBase<Platform> &) = delete;
 
-  virtual Result<> Frame() const = 0;
+  virtual Status Frame() const = 0;
 
 protected:
   HandleType m_Handle;
