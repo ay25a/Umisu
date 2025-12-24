@@ -6,7 +6,6 @@
 
 namespace york::vulkan {
 enum class APIVersion : uint32_t {
-  NONE = 0,
   V1_0 = york::version::make(1, 0, 0),
   V1_2 = york::version::make(1, 2, 0),
   V1_3 = york::version::make(1, 3, 0),

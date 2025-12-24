@@ -1,34 +1,21 @@
 #pragma once
 
-#include <expected>
-#include <format>
-#include <source_location>
 #include "York/Core/error.hpp"
+#include <expected>
 
 namespace york {
 
-template <typename ResultType, typename ErrorType>
-using Result = std::expected<ResultType, Error<ErrorType>>;
+// Usage:
+// Result<> for function with no returned data
+// Result<ReturnType> for function that return a value
+// In case of failure: YK_RESULT_FAILURE("<Error Message>")
+// In case of success: either YK_RESULT_SUCCESS() or YK_RESULT_SUCCESS(value)
 
-using Status = std::expected<void, std::string>;
-
-template <typename... Args>
-inline Status failure(std::format_string<Args...> fmt, Args &&...args) {
-  return std::unexpected(std::vformat(fmt.get(), std::make_format_args(args...)));
-};
-
-template <typename ResultType, typename ErrorType>
-inline Result<ResultType, ErrorType> failure(const Status &status, ErrorCode code, const std::source_location &location = std::source_location::current()) {
-  return std::unexpected(Error<ErrorType>::Create(code, status.error(), location));
-}
-
-template <typename ResultType, typename ErrorType>
-inline Result<ResultType, ErrorType> failure(const std::string &msg, ErrorCode code, const std::source_location &location = std::source_location::current()) {
-  return std::unexpected(Error<ErrorType>::Create(code, msg, location));
-}
-
-// clang-format off
-#define STATUS_SUCCESS {}
-// clang-format on
+// Alias for std::expected
+template <typename ReturnType = void>
+using Result = std::expected<ReturnType, Error>;
 
 } // namespace york
+
+#define YK_RESULT_FAILURE(err) std::unexpected(err)
+#define YK_RESULT_SUCCESS(...) __VA_ARGS__

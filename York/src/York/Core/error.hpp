@@ -2,27 +2,28 @@
 
 #include <source_location>
 #include <string>
-#include <typeinfo>
+#include <format>
 
 namespace york {
 
-enum class ErrorCode {
-  Unknown = 0,
-  WindowCreation,
-  VKValidation,
-  VKCreation,
-};
+// Non-Decided Enumeration of Errors
+// Potentially will be used internally to recover from some Errors
+enum class ErrorCode { Unknown = 0 };
 
-template <typename _Type = void>
+// Error Structure with Message for direct feedback, and Location of the Error
 struct Error {
-  ErrorCode category;
+  ErrorCode code = ErrorCode::Unknown;
   std::string message;
   std::source_location location;
 
-  static Error Create(ErrorCode code, const std::string &msg, const std::source_location &loc) {
-    return {code, msg, loc};
+  static Error Create(const std::string &msg, const std::source_location &loc = std::source_location::current()) {
+    return {.message = msg, .location = loc};
   }
-  const std::type_info &type() const { return typeid(_Type); }
+
+  inline std::string format() const noexcept {
+    return std::format("Error at [file: {}, line: {}, function: {}]: {}",
+                       location.file_name(), location.line(), location.function_name(), message);
+  }
 };
 
 } // namespace york
